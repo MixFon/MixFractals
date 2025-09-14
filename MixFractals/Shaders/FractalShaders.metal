@@ -8,6 +8,11 @@
 #include <metal_stdlib>
 using namespace metal;
 
+struct VertexIn {
+	float2 position;
+	float2 uv;
+};
+
 struct VertexOut {
 	float4 position [[position]];
 	float2 uv;
@@ -21,36 +26,16 @@ struct FractalUniforms {
 };
 
 // Вершинный шейдер: рисуем fullscreen quad (две треугольные полоски)
-vertex VertexOut vertex_fractal(uint vertexID [[vertex_id]]) {
-	float2 positions[6] = {
-		float2(-1.0, -1.0), // 0
-		float2( 1.0, -1.0), // 1
-		float2(-1.0,  1.0), // 2
-
-		float2( 1.0, -1.0), // 3
-		float2( 1.0,  1.0), // 4
-		float2(-1.0,  1.0)  // 5
-	};
-
-	float2 uvs[6] = {
-		float2(0.0, 0.0),
-		float2(1.0, 0.0),
-		float2(0.0, 1.0),
-
-		float2(1.0, 0.0),
-		float2(1.0, 1.0),
-		float2(0.0, 1.0)
-	};
-
+vertex VertexOut vertex_fractal(uint vertexID [[vertex_id]], const device VertexIn* vertices [[buffer(0)]]) {
 	VertexOut out;
-	out.position = float4(positions[vertexID], 0.0, 1.0);
-	out.uv = uvs[vertexID];
+	out.position = float4(vertices[vertexID].position, 0.0, 1.0);
+	out.uv = vertices[vertexID].uv;
 	return out;
 }
 
-fragment float4 fragment_fractal(VertexOut in [[stage_in]],
-							  constant FractalUniforms& uniforms [[buffer(0)]]) {
-	// переводим экранные координаты (uv) в комплексную плоскость
+fragment float4 fragment_fractal(VertexOut in [[stage_in]], constant FractalUniforms& uniforms [[buffer(0)]]) {
+	// Переводим экранные координаты (uv) в комплексную плоскость
+	// Вычитаем 0.5 чтобы центр прямоугольника (экрана был в 0,0)
 	float2 c = float2(
 		(in.uv.x - 0.5) * uniforms.scale * uniforms.aspect + uniforms.center.x,
 		(in.uv.y - 0.5) * uniforms.scale + uniforms.center.y

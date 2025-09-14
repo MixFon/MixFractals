@@ -51,11 +51,22 @@ final class FractalMetallView: MTKView {
 	private let startScale: Float = 6.0
 	private let baseIter: Int32 = 500
 	
+	private let vertices: [Vertex] = [
+		// Миссив для отображения 2 треугольников на весь экран
+		Vertex(position: SIMD2<Float>(-1.0, -1.0), uv: SIMD2<Float>(0.0, 0.0)),
+		Vertex(position: SIMD2<Float>( 1.0, -1.0), uv: SIMD2<Float>(1.0, 0.0)),
+		Vertex(position: SIMD2<Float>(-1.0,  1.0), uv: SIMD2<Float>(0.0, 1.0)),
+		
+		Vertex(position: SIMD2<Float>( 1.0, -1.0), uv: SIMD2<Float>(1.0, 0.0)),
+		Vertex(position: SIMD2<Float>( 1.0,  1.0), uv: SIMD2<Float>(1.0, 1.0)),
+		Vertex(position: SIMD2<Float>(-1.0,  1.0), uv: SIMD2<Float>(0.0, 1.0))
+	]
+	
 	override init(frame frameRect: CGRect, device: (any MTLDevice)?) {
 		self.commandQueue = device?.makeCommandQueue()
 		
 		// Загружаем шейдеры
-		let library = device!.makeDefaultLibrary()
+		let library = device?.makeDefaultLibrary()
 		let vertexFunc = library?.makeFunction(name: "vertex_fractal")
 		let fragmentFunc = library?.makeFunction(name: "fragment_fractal")
 		
@@ -104,6 +115,12 @@ final class FractalMetallView: MTKView {
 			encoder?.setRenderPipelineState(renderPipelineState)
 		}
 		
+		let vertexBuffer = self.device?.makeBuffer(
+			bytes: self.vertices,
+			length: self.vertices.count * MemoryLayout<Vertex>.stride,
+			options: []
+		)
+		encoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
 		encoder?.setFragmentBytes(&uniforms, length: MemoryLayout<FractalUniforms>.stride, index: 0)
 
 		// Рисуем 6 вершины (2 треугольника)
