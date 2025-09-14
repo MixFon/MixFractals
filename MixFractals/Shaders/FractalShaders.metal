@@ -14,8 +14,10 @@ struct VertexOut {
 };
 
 struct FractalUniforms {
-	float2 center;
-	float scale;
+	float2 center; // куда смотрим (панорамирование)
+	float scale;   // масштаб (zoom)
+	float aspect;  // отношение сторок экрана
+	int maxIter;   // количество итераций для точности
 };
 
 // Вершинный шейдер: рисуем fullscreen quad (две треугольные полоски)
@@ -46,23 +48,24 @@ vertex VertexOut vertex_fractal(uint vertexID [[vertex_id]]) {
 	return out;
 }
 
-// Фрагментный шейдер: считаем Мандельброта
 fragment float4 fragment_fractal(VertexOut in [[stage_in]],
 							  constant FractalUniforms& uniforms [[buffer(0)]]) {
-	// координаты пикселя в комплексной плоскости
-	float2 c = (in.uv - 0.5) * uniforms.scale + uniforms.center;
+	// переводим экранные координаты (uv) в комплексную плоскость
+	float2 c = float2(
+		(in.uv.x - 0.5) * uniforms.scale * uniforms.aspect + uniforms.center.x,
+		(in.uv.y - 0.5) * uniforms.scale + uniforms.center.y
+	);
 
-	// считаем Мандельброта
 	float2 z = c;
 	int iter = 0;
-	const int maxIter = 200;
 
-	while (dot(z, z) < 4.0 && iter < maxIter) {
-		z = float2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
+	while (dot(z, z) < 2.0 && iter < uniforms.maxIter) {
+		z = float2(z.x*z.x - z.y*z.y + uniforms.center.x, 2.0*z.x*z.y - uniforms.center.y); //+ c;
 		iter++;
 	}
 
-	float t = float(iter) / maxIter;
+	// нормализуем для цвета
+	float t = float(iter) / uniforms.maxIter;
 	return float4(t, t * 0.5, 1.0 - t, 1.0);
 }
 
