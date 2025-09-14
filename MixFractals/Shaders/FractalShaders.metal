@@ -33,6 +33,23 @@ vertex VertexOut vertex_fractal(uint vertexID [[vertex_id]], const device Vertex
 	return out;
 }
 
+// функция перевода HSV → RGB
+float3 hsv2rgb(float h, float s, float v) {
+	float c = v * s;
+	float x = c * (1 - abs(fmod(h*6.0, 2.0) - 1.0));
+	float m = v - c;
+
+	float3 rgb;
+	if (h < 1.0/6.0)      { rgb = float3(c,x,0); }
+	else if (h < 2.0/6.0) { rgb = float3(x,c,0); }
+	else if (h < 3.0/6.0) { rgb = float3(0,c,x); }
+	else if (h < 4.0/6.0) { rgb = float3(0,x,c); }
+	else if (h < 5.0/6.0) { rgb = float3(x,0,c); }
+	else                   { rgb = float3(c,0,x); }
+
+	return rgb + m;
+}
+
 fragment float4 fragment_fractal(VertexOut in [[stage_in]], constant FractalUniforms& uniforms [[buffer(0)]]) {
 	// Переводим экранные координаты (uv) в комплексную плоскость
 	// Вычитаем 0.5 чтобы центр прямоугольника (экрана был в 0,0)
@@ -45,13 +62,14 @@ fragment float4 fragment_fractal(VertexOut in [[stage_in]], constant FractalUnif
 	int iter = 0;
 
 	while (dot(z, z) < 2.0 && iter < uniforms.maxIter) {
-		z = float2(z.x*z.x - z.y*z.y + uniforms.center.x, 2.0*z.x*z.y - uniforms.center.y); //+ c;
+		z = float2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
 		iter++;
 	}
 
-	// нормализуем для цвета
-	float t = float(iter) / uniforms.maxIter;
-	return float4(t, t * 0.5, 1.0 - t, 1.0);
+	float hue = float(iter) / uniforms.maxIter; // 0..1
+	float s = 1.0;
+	float v = (iter < uniforms.maxIter) ? 1.0 : 0.0;
+
+	float3 color = hsv2rgb(hue, s, v);
+	return float4(color, 1.0);
 }
-
-
