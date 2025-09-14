@@ -62,7 +62,7 @@ fragment float4 fragment_fractal(VertexOut in [[stage_in]], constant FractalUnif
 	int iter = 0;
 
 	while (dot(z, z) < 2.0 && iter < uniforms.maxIter) {
-		z = float2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+		z = float2(z.x*z.x - z.y*z.y + uniforms.center.x, 2.0*z.x*z.y + uniforms.center.y);// + c;
 		iter++;
 	}
 
