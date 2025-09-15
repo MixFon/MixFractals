@@ -54,8 +54,8 @@ fragment float4 fragment_fractal(VertexOut in [[stage_in]], constant FractalUnif
 	// Переводим экранные координаты (uv) в комплексную плоскость
 	// Вычитаем 0.5 чтобы центр прямоугольника (экрана был в 0,0)
 	float2 c = float2(
-		(in.uv.x - 0.5) * uniforms.scale * uniforms.aspect + uniforms.center.x,
-		(in.uv.y - 0.5) * uniforms.scale + uniforms.center.y
+		(in.uv.x - 0.5) * uniforms.scale * uniforms.aspect,// + uniforms.center.x,
+		(in.uv.y - 0.5) * uniforms.scale// + uniforms.center.y
 	);
 
 	float2 z = c;
