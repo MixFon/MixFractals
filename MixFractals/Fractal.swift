@@ -13,8 +13,10 @@ import Foundation
 struct FractalWrapper: UIViewControllerRepresentable {
 	typealias UIViewControllerType = Fractal
 	
+	let assembly: _FractalAssembler
+	
 	func makeUIViewController(context: Context) -> Fractal {
-		Fractal()
+		Fractal(assembly: self.assembly)
 	}
 	
 	func updateUIViewController(_ uiViewController: Fractal, context: Context) {
@@ -24,19 +26,35 @@ struct FractalWrapper: UIViewControllerRepresentable {
 }
 
 struct FractalUniforms {
-	var center: SIMD2<Float>
+	/// Позиция точки на экране.
+	var point: SIMD2<Float>
+	/// Масштаб
 	var scale: Float
+	/// Соотношение сторон экрана
 	var aspect: Float
+	/// Центр экрана. Уентр фрактала
+	var center: SIMD2<Float>
+	/// Максимальное количество итераций цикла в жейдере
 	var maxIter: Int32
 }
 
 final class Fractal: UIViewController {
 	
 	private let device = MTLCreateSystemDefaultDevice()
+	let assembly: _FractalAssembler
+	
+	init(assembly: _FractalAssembler) {
+		self.assembly = assembly
+		super.init(nibName: nil, bundle: nil)
+	}
+	
+	required init?(coder: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		let metallView = FractalMetallView(frame: self.view.bounds, device: self.device)
+		let metallView = FractalMetallView(frame: self.view.bounds, device: self.device, assembler: self.assembly)
 		metallView.clearColor = MTLClearColor(red: 0, green: 1, blue: 0, alpha: 1)
 		self.view.addSubview(metallView)
 	}
@@ -49,8 +67,10 @@ final class FractalMetallView: MTKView {
 	
 	private var uniforms: FractalUniforms
 	private let startScale: Float = 6.0
-	private let baseIter: Int32 = 500
-	
+	private let startIter: Int32 = 500
+	private let startCenter: SIMD2<Float> = SIMD2<Float>(0.0, 0.0)
+	private let startPoint: SIMD2<Float> = SIMD2<Float>(0.0, 0.0)
+
 	private let vertices: [Vertex] = [
 		// Миссив для отображения 2 треугольников на весь экран
 		Vertex(position: SIMD2<Float>(-1.0, -1.0), uv: SIMD2<Float>(0.0, 0.0)),
@@ -62,39 +82,27 @@ final class FractalMetallView: MTKView {
 		Vertex(position: SIMD2<Float>(-1.0,  1.0), uv: SIMD2<Float>(0.0, 1.0))
 	]
 	
-	override init(frame frameRect: CGRect, device: (any MTLDevice)?) {
+	init(frame frameRect: CGRect, device: (any MTLDevice)?, assembler: _FractalAssembler) {
 		self.commandQueue = device?.makeCommandQueue()
 		
-		// Загружаем шейдеры
-		let library = device?.makeDefaultLibrary()
-		let vertexFunc = library?.makeFunction(name: "vertex_fractal")
-		let fragmentFunc = library?.makeFunction(name: "fragment_fractal")
-		
-		// Создаём render pipeline
-		let descriptor = MTLRenderPipelineDescriptor()
-		descriptor.vertexFunction = vertexFunc
-		descriptor.fragmentFunction = fragmentFunc
-		descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+		let descriptor = assembler.assembleRenderPipelineDescriptor(device: device)
 		
 		self.renderPipelineState = try? device?.makeRenderPipelineState(descriptor: descriptor)
 		
 		self.uniforms = FractalUniforms(
-			center: SIMD2<Float>(0.0, 0.0),
+			point: self.startPoint,
 			scale: self.startScale,
 			aspect: 1,
-			maxIter: self.baseIter
+			center: self.startCenter,
+			maxIter: self.startIter
 		)
 		super.init(frame: frameRect, device: device)
 		
 		// Настраиваем формат пикселей для MTKView
 		self.colorPixelFormat = .bgra8Unorm
 		
-		let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
-		self.addGestureRecognizer(pinch)
-		
-		let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-		self.addGestureRecognizer(pan)
-		
+		setupGestures()
+								  
 		self.uniforms.aspect = Float(self.bounds.width / self.bounds.height)
 	}
 	
@@ -138,12 +146,31 @@ final class FractalMetallView: MTKView {
 		commandBuffer?.commit()
 	}
 	
+	private func setupGestures() {
+		let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+		self.addGestureRecognizer(pinch)
+		
+		let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+		self.addGestureRecognizer(pan)
+		
+		// Создаем распознаватель жеста с указанием количества пальцев
+		let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleTwoFingerPan(_:)))
+		panGesture.minimumNumberOfTouches = 2  // Минимум 2 пальца
+		panGesture.maximumNumberOfTouches = 2  // Максимум 2 пальца
+		self.addGestureRecognizer(panGesture)
+		
+		let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
+		doubleTapGesture.numberOfTapsRequired = 2
+		doubleTapGesture.numberOfTouchesRequired = 1 // Один палец
+		self.addGestureRecognizer(doubleTapGesture)
+	}
+	
 	@objc
 	private func handlePinch(_ sender: UIPinchGestureRecognizer) {
 		if sender.state == .changed || sender.state == .ended {
 			self.uniforms.scale *= Float(1 / sender.scale)
 			let zoomFactor = log10(self.startScale / self.uniforms.scale) // 6.0 = начальный scale
-			self.uniforms.maxIter = Int32(Float(self.baseIter) * (1 + zoomFactor))
+			self.uniforms.maxIter = Int32(Float(self.startIter) * (1 + zoomFactor))
 			sender.scale = 1.0
 		}
 	}
@@ -152,9 +179,28 @@ final class FractalMetallView: MTKView {
 	private func handlePan(_ gesture: UIPanGestureRecognizer) {
 		let translation = gesture.translation(in: self) // смещение
 		// Производим нормальлизацию
-		self.uniforms.center.x -= Float(translation.x) / Float(bounds.width) * self.uniforms.scale
-		self.uniforms.center.y += Float(translation.y) / Float(bounds.height) * self.uniforms.scale
+		self.uniforms.point.x -= Float(translation.x) / Float(bounds.width) * self.uniforms.scale
+		self.uniforms.point.y += Float(translation.y) / Float(bounds.height) * self.uniforms.scale
 		// Обнуляем translation, иначе будет накапливаться
 		gesture.setTranslation(.zero, in: self)
+	}
+	
+	@objc
+	private func handleTwoFingerPan(_ gesture: UIPanGestureRecognizer) {
+		guard gesture.numberOfTouches == 2 else { return }
+		let translation = gesture.translation(in: self)
+		// Перемещение центра
+		self.uniforms.center.x -= Float(translation.x) / Float(bounds.width) * self.uniforms.scale
+		self.uniforms.center.y += Float(translation.y) / Float(bounds.height) * self.uniforms.scale
+		gesture.setTranslation(.zero, in: self)
+	}
+	
+	@objc
+	private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+		self.uniforms.scale = self.startScale
+		self.uniforms.maxIter = self.startIter
+		self.uniforms.center = self.startCenter
+		self.uniforms.point = self.startPoint
+		self.uniforms.aspect = Float(self.bounds.width / self.bounds.height)
 	}
 }
