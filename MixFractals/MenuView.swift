@@ -16,8 +16,8 @@ struct Item: Identifiable {
 struct MenuView: View {
     let items = [
 		Item(title: "Julia", assembly: JuliaAssembler()),
-		Item(title: "Julia^3", assembly: Julia3Assembler()),
 		Item(title: "Mandelbrot", assembly: MandelbrotAssembler()),
+		Item(title: "Mandelbrot^3", assembly: Mandelbrot3Assembler()),
     ]
     
     var body: some View {

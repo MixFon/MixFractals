@@ -27,12 +27,12 @@ final class JuliaAssembler: _FractalAssembler {
 	}
 }
 
-final class Julia3Assembler: _FractalAssembler {
+final class Mandelbrot3Assembler: _FractalAssembler {
 	
 	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
 		let library = device?.makeDefaultLibrary()
 		let vertexFunc = library?.makeFunction(name: "vertex_fractal")
-		let fragmentFunc = library?.makeFunction(name: "fragment_julia_3_fractal")
+		let fragmentFunc = library?.makeFunction(name: "fragment_mandelbrot_3_fractal")
 		
 		// Создаём render pipeline
 		let descriptor = MTLRenderPipelineDescriptor()

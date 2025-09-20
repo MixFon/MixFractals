@@ -11,7 +11,7 @@
 
 using namespace metal;
 
-fragment float4 fragment_julia_3_fractal(VertexOut in [[stage_in]], constant FractalUniforms& uniforms [[buffer(0)]]) {
+fragment float4 fragment_mandelbrot_3_fractal(VertexOut in [[stage_in]], constant FractalUniforms& uniforms [[buffer(0)]]) {
 	// Переводим экранные координаты (uv) в комплексную плоскость
 	// Вычитаем 0.5 чтобы центр прямоугольника (экрана был в 0,0)
 	float2 c = float2(
@@ -23,7 +23,7 @@ fragment float4 fragment_julia_3_fractal(VertexOut in [[stage_in]], constant Fra
 	int iter = 0;
 
 	while (dot(z, z) < 2.0 && iter < uniforms.maxIter) {
-		z = float2(z.x*z.x*z.x - 3.0*z.x*z.y*z.y, 3.0*z.x*z.x*z.y + z.y*z.y*z.y) + c;
+		z = float2(z.x*z.x*z.x - 3.0*z.x*z.y*z.y, 3.0*z.x*z.x*z.y - z.y*z.y*z.y) + uniforms.point;
 		iter++;
 	}
 
