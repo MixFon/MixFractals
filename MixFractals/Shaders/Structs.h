@@ -24,6 +24,7 @@ struct FractalUniforms {
 	float aspect;  // Отношение сторок экрана
 	float2 center; // Куда смотрим (панорамирование)
 	int maxIter;   // Количество итераций для точности
+	int power;     // Степень косплексноо числа z
 };
 
 #endif /* Structs_h */

@@ -8,6 +8,7 @@
 #include <metal_stdlib>
 #include "../Structs.h"
 #include "../ColorsFunctions/ColorsConverter.h"
+#include "../Common/CommonFunctions.h"
 
 using namespace metal;
 
@@ -23,7 +24,7 @@ fragment float4 fragment_julia_fractal(VertexOut in [[stage_in]], constant Fract
 	int iter = 0;
 
 	while (dot(z, z) < 2.0 && iter < uniforms.maxIter) {
-		z = float2(z.x*z.x - z.y*z.y + uniforms.point.x, 2.0*z.x*z.y + uniforms.point.y);// + c;
+		z = complexPow(z, uniforms.power) + uniforms.point;
 		iter++;
 	}
 

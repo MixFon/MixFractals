@@ -11,12 +11,12 @@ protocol _FractalAssembler {
 	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor
 }
 
-final class JuliaAssembler: _FractalAssembler {
+extension _FractalAssembler {
 	
-	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
+	func assembleRenderPipelineDescriptor(fragmentFuncName: String, device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
 		let library = device?.makeDefaultLibrary()
 		let vertexFunc = library?.makeFunction(name: "vertex_fractal")
-		let fragmentFunc = library?.makeFunction(name: "fragment_julia_fractal")
+		let fragmentFunc = library?.makeFunction(name: fragmentFuncName)
 		
 		// Создаём render pipeline
 		let descriptor = MTLRenderPipelineDescriptor()
@@ -27,34 +27,16 @@ final class JuliaAssembler: _FractalAssembler {
 	}
 }
 
-final class Mandelbrot3Assembler: _FractalAssembler {
+final class JuliaAssembler: _FractalAssembler {
 	
 	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
-		let library = device?.makeDefaultLibrary()
-		let vertexFunc = library?.makeFunction(name: "vertex_fractal")
-		let fragmentFunc = library?.makeFunction(name: "fragment_mandelbrot_3_fractal")
-		
-		// Создаём render pipeline
-		let descriptor = MTLRenderPipelineDescriptor()
-		descriptor.vertexFunction = vertexFunc
-		descriptor.fragmentFunction = fragmentFunc
-		descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-		return descriptor
+		return assembleRenderPipelineDescriptor(fragmentFuncName: "fragment_julia_fractal", device: device)
 	}
 }
 
 final class MandelbrotAssembler: _FractalAssembler {
 	
 	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
-		let library = device?.makeDefaultLibrary()
-		let vertexFunc = library?.makeFunction(name: "vertex_fractal")
-		let fragmentFunc = library?.makeFunction(name: "fragment_mandelbrot_fractal")
-		
-		// Создаём render pipeline
-		let descriptor = MTLRenderPipelineDescriptor()
-		descriptor.vertexFunction = vertexFunc
-		descriptor.fragmentFunction = fragmentFunc
-		descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-		return descriptor
+		return assembleRenderPipelineDescriptor(fragmentFuncName: "fragment_mandelbrot_fractal", device: device)
 	}
 }

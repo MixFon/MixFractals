@@ -13,10 +13,11 @@ import Foundation
 struct FractalWrapper: UIViewControllerRepresentable {
 	typealias UIViewControllerType = Fractal
 	
+	let power: Int32
 	let assembly: _FractalAssembler
 	
 	func makeUIViewController(context: Context) -> Fractal {
-		Fractal(assembly: self.assembly)
+		Fractal(power: self.power, assembly: self.assembly)
 	}
 	
 	func updateUIViewController(_ uiViewController: Fractal, context: Context) {
@@ -36,14 +37,18 @@ struct FractalUniforms {
 	var center: SIMD2<Float>
 	/// Максимальное количество итераций цикла в жейдере
 	var maxIter: Int32
+	/// Степень косплексного числа z
+	var power: Int32
 }
 
 final class Fractal: UIViewController {
 	
 	private let device = MTLCreateSystemDefaultDevice()
 	let assembly: _FractalAssembler
+	let power: Int32
 	
-	init(assembly: _FractalAssembler) {
+	init(power: Int32, assembly: _FractalAssembler) {
+		self.power = power
 		self.assembly = assembly
 		super.init(nibName: nil, bundle: nil)
 	}
@@ -54,7 +59,7 @@ final class Fractal: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		let metallView = FractalMetallView(frame: self.view.bounds, device: self.device, assembler: self.assembly)
+		let metallView = FractalMetallView(frame: self.view.bounds, device: self.device, power: self.power, assembler: self.assembly)
 		metallView.clearColor = MTLClearColor(red: 0, green: 1, blue: 0, alpha: 1)
 		self.view.addSubview(metallView)
 	}
@@ -82,7 +87,7 @@ final class FractalMetallView: MTKView {
 		Vertex(position: SIMD2<Float>(-1.0,  1.0), uv: SIMD2<Float>(0.0, 1.0))
 	]
 	
-	init(frame frameRect: CGRect, device: (any MTLDevice)?, assembler: _FractalAssembler) {
+	init(frame frameRect: CGRect, device: (any MTLDevice)?, power: Int32, assembler: _FractalAssembler) {
 		self.commandQueue = device?.makeCommandQueue()
 		
 		let descriptor = assembler.assembleRenderPipelineDescriptor(device: device)
@@ -94,7 +99,8 @@ final class FractalMetallView: MTKView {
 			scale: self.startScale,
 			aspect: 1,
 			center: self.startCenter,
-			maxIter: self.startIter
+			maxIter: self.startIter,
+			power: power
 		)
 		super.init(frame: frameRect, device: device)
 		
