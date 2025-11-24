@@ -11,6 +11,7 @@ using namespace metal;
 struct Vertex {
 	float4 position [[position]];
 	float4 color;
+	float2 uv;
 };
 
 vertex Vertex vertex_main(uint vertexID [[vertex_id]]) {
@@ -34,14 +35,32 @@ vertex Vertex vertex_main(uint vertexID [[vertex_id]]) {
 		0, 2, 3    // Второй треугольник
 	};
 	
+	float2 uvs[4] = {
+		float2(0.0, 1.0), // верх-лево
+		float2(0.0, 0.0), // низ-лево
+		float2(1.0, 0.0), // низ-право
+		float2(1.0, 1.0)  // верх-право
+	};
+	
+	
 	uint ind = indices[vertexID];
 
 	Vertex out;
 	out.position = positions[ind];
 	out.color = colors[ind];
+	out.uv = uvs[ind];
 	return out;
 }
 
 fragment float4 fragment_main(Vertex in [[stage_in]]) {
+	float2 p = in.uv * 2.0 - 1.0;  // uv → [-1,1]
+	float r = 0.3;
+
+	float x = p.x;
+	float y = p.y;
+	if (x * x + y * y < r) {
+		discard_fragment();
+	}
+
 	return in.color;
 }
