@@ -17,6 +17,7 @@ final class TriangleView: MTKView {
 	private let positionBuffer: MTLBuffer!
 	private let colorBuffer: MTLBuffer!
 	private let indexBuffer: MTLBuffer!
+	private let uvBuffer: MTLBuffer!
 
 	private let positions: [SIMD4<Float>] = [
 		SIMD4(-0.5,  0.5, 0, 1),
@@ -35,6 +36,13 @@ final class TriangleView: MTKView {
 	private let indices: [UInt32] = [
 		0, 1, 2,   // Первый треугольник
 		0, 2, 3    // Второй треугольник
+	]
+	
+	private let uvs: [SIMD2<Float>] = [
+		SIMD2(0.0, 1.0), // верх-лево
+		SIMD2(0.0, 0.0), // низ-лево
+		SIMD2(1.0, 0.0), // низ-право
+		SIMD2(1.0, 1.0)  // верх-право
 	]
 	
 	override init(frame frameRect: CGRect, device: (any MTLDevice)?) {
@@ -66,6 +74,12 @@ final class TriangleView: MTKView {
 		self.indexBuffer = device?.makeBuffer(
 			bytes: self.indices,
 			length: MemoryLayout<UInt32>.stride * self.indices.count,
+			options: .storageModeShared
+		)
+		
+		self.uvBuffer = device?.makeBuffer(
+			bytes: self.uvs,
+			length: MemoryLayout<SIMD2<Float>>.stride * self.uvs.count,
 			options: .storageModeShared
 		)
 		
@@ -106,6 +120,7 @@ final class TriangleView: MTKView {
 		encoder?.setVertexBuffer(self.positionBuffer, offset: 0, index: 0)
 		encoder?.setVertexBuffer(self.colorBuffer, offset: 0, index: 1)
 		encoder?.setVertexBuffer(self.indexBuffer, offset: 0, index: 2)
+		encoder?.setVertexBuffer(self.uvBuffer, offset: 0, index: 3)
 
 		encoder?.setFragmentBuffer(timeBuffer, offset: 0, index: 1)
 		
