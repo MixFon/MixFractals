@@ -34,9 +34,37 @@ final class JuliaAssembler: _FractalAssembler {
 	}
 }
 
+final class Julia2Assembler: _FractalAssembler {
+	
+	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
+		return assembleRenderPipelineDescriptor(fragmentFuncName: "fragment_julia2_fractal", device: device)
+	}
+}
+
+final class Julia3Assembler: _FractalAssembler {
+	
+	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
+		return assembleRenderPipelineDescriptor(fragmentFuncName: "fragment_julia3_fractal", device: device)
+	}
+}
+
 final class MandelbrotAssembler: _FractalAssembler {
 	
 	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
 		return assembleRenderPipelineDescriptor(fragmentFuncName: "fragment_mandelbrot_fractal", device: device)
+	}
+}
+
+final class Mandelbrot2Assembler: _FractalAssembler {
+	
+	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
+		return assembleRenderPipelineDescriptor(fragmentFuncName: "fragment_mandelbrot2_fractal", device: device)
+	}
+}
+
+final class Mandelbrot3Assembler: _FractalAssembler {
+	
+	func assembleRenderPipelineDescriptor(device: (any MTLDevice)?) -> MTLRenderPipelineDescriptor {
+		return assembleRenderPipelineDescriptor(fragmentFuncName: "fragment_mandelbrot3_fractal", device: device)
 	}
 }

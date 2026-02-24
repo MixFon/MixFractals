@@ -7,30 +7,25 @@
 
 import SwiftUI
 
-struct Item: Identifiable {
-	let id = UUID()
-	let title: String
-	let assembly: _FractalAssembler
-}
-
 struct MenuView: View {
-	private let items = [
-		Item(title: "Julia", assembly: JuliaAssembler()),
-		Item(title: "Mandelbrot", assembly: MandelbrotAssembler()),
-	]
-	
 	var body: some View {
 		NavigationView {
 			List {
-				ForEach(items) { item in
-					Section(header: Text(item.title)) {
-						ForEach(Array(1...6), id: \.self) { index in
-							NavigationLink(
-								destination: FractalWrapper(power: Int32(index), assembly: item.assembly)
-							) {
-								Text("\(item.title) ^ \(index)")
-							}
-						}
+				Section(header: Text("Julia")) {
+					NavigationLink(destination: FractalWrapper(power: 2, assembly: Julia2Assembler())) {
+						Text("Julia ^ 2")
+					}
+					NavigationLink(destination: FractalWrapper(power: 3, assembly: Julia3Assembler())) {
+						Text("Julia ^ 3")
+					}
+				}
+				
+				Section(header: Text("Mandelbrot")) {
+					NavigationLink(destination: FractalWrapper(power: 2, assembly: Mandelbrot2Assembler())) {
+						Text("Mandelbrot ^ 2")
+					}
+					NavigationLink(destination: FractalWrapper(power: 3, assembly: Mandelbrot3Assembler())) {
+						Text("Mandelbrot ^ 3")
 					}
 				}
 			}
