@@ -25,3 +25,27 @@ float3 hsv2rgb(float h, float s, float v) {
 	return rgb + m;
 }
 
+// гладкая итерация для непрерывной раскраски
+float smoothIter(float iter, float2 z) {
+	float r2 = dot(z, z);
+	float log_zn = 0.5 * log(r2);
+	float nu = log(log_zn / log(2.0)) / log(2.0);
+	return iter + 1.0 - nu;
+}
+
+// гладкая раскраска по continuous iteration count
+float3 smoothColor(int iter, float2 z, int maxIter) {
+	if (iter >= maxIter) {
+		return float3(0.0);
+	}
+	
+	float si = smoothIter(float(iter), z);
+	float t = si / float(maxIter);       // 0..1
+	float hue = fmod(t * 5.0, 1.0);      // несколько оборотов по кругу
+	float s = 1.0;
+	float v = 1.0;
+	
+	return hsv2rgb(hue, s, v);
+}
+
+

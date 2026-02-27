@@ -34,11 +34,7 @@ fragment float4 fragment_mandelbrot3_fractal(VertexOut in [[stage_in]], constant
 		iter++;
 	}
 
-	float hue = float(iter) / uniforms.maxIter; // 0..1
-	float s = 1.0;
-	float v = (iter < uniforms.maxIter) ? 1.0 : 0.0;
-
-	float3 color = hsv2rgb(hue, s, v);
+	float3 color = smoothColor(iter, z, uniforms.maxIter);
 	return float4(color, 1.0);
 }
 
