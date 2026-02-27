@@ -19,11 +19,16 @@ fragment float4 fragment_mandelbrot2_fractal(VertexOut in [[stage_in]], constant
 
 	float2 z = c;
 	int iter = 0;
-
-	while (dot(z, z) < 2.0 && iter < uniforms.maxIter) {
+	
+	while (dot(z, z) < 4.0 && iter < uniforms.maxIter) {
+		float x = z.x;
+		float y = z.y;
+		float x2 = x * x;
+		float y2 = y * y;
+		
 		z = float2(
-			z.x * z.x - z.y * z.y,
-			2.0 * z.x * z.y
+			x2 - y2,
+			2.0 * x * y
 		) + c;
 		iter++;
 	}

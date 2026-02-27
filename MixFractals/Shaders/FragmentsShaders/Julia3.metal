@@ -19,11 +19,14 @@ fragment float4 fragment_julia3_fractal(VertexOut in [[stage_in]], constant Frac
 
 	float2 z = c;
 	int iter = 0;
-
-	while (dot(z, z) < 2.0 && iter < uniforms.maxIter) {
+	
+	while (dot(z, z) < 4.0 && iter < uniforms.maxIter) {
+		float x2 = z.x * z.x;
+		float y2 = z.y * z.y;
+		
 		z = float2(
-			z.x * z.x * z.x - 3.0 * z.x * z.y * z.y,
-			3.0 * z.x * z.x * z.y - z.y * z.y * z.y
+			z.x * x2 - 3.0 * z.x * y2,
+			3.0 * x2 * z.y - z.y * y2
 		) + uniforms.point;
 		iter++;
 	}

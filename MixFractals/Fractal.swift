@@ -175,8 +175,19 @@ final class FractalMetallView: MTKView {
 	private func handlePinch(_ sender: UIPinchGestureRecognizer) {
 		if sender.state == .changed || sender.state == .ended {
 			self.uniforms.scale *= Float(1 / sender.scale)
-			let zoomFactor = log10(self.startScale / self.uniforms.scale) // 6.0 = начальный scale
-			self.uniforms.maxIter = Int32(Float(self.startIter) * (1 + zoomFactor))
+			
+			// Чем сильнее зум, тем больше итераций (квадратичная зависимость)
+			let zoomFactor = max(0, log10(self.startScale / self.uniforms.scale)) // 6.0 = начальный scale
+			let k: Float = 0.7
+			let base = Float(self.startIter)
+			var newIter = Int32(base * (1.0 + k * zoomFactor * zoomFactor))
+			
+			// Не даём итерациям падать ниже стартовых и задираем разумный верхний предел
+			let maxAllowed: Int32 = 10_000
+			if newIter < self.startIter { newIter = self.startIter }
+			if newIter > maxAllowed { newIter = maxAllowed }
+			
+			self.uniforms.maxIter = newIter
 			sender.scale = 1.0
 		}
 	}
